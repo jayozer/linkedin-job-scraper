@@ -40,8 +40,8 @@ load_dotenv()
 class Config:
     """Application configuration"""
     anthropic_api_key: str
-    model_name: str = "claude-sonnet-4-20250514"
-    max_tokens: int = 4096
+    model_name: str = "claude-sonnet-4-5-20250929"
+    max_tokens: int = 8192
     browser_timeout: int = 60000
     selector_timeout: int = 15000
     log_level: str = "INFO"
