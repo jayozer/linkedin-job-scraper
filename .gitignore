@@ -32,3 +32,13 @@ test_reports/
 # OS
 .DS_Store
 Thumbs.db
+
+# Test files
+test_*.py
+
+# JayIQ integration files (blog post content - not for repo)
+jayiq_scraper.py
+JAYIQ_INTEGRATION.md
+QUICK_REFERENCE.md
+DEPLOYMENT.md
+BLOG_POST.md

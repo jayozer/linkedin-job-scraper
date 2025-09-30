@@ -11,6 +11,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright, TimeoutError
 
+# Import URL utilities for robust URL handling
+from url_utils import normalize_job_url, JobSite
+
 
 def sanitize_filename(text):
     """
@@ -28,6 +31,9 @@ def extract_job_id(url):
     """
     Extract job ID from LinkedIn URL
     Example: https://www.linkedin.com/jobs/view/4300362234 -> 4300362234
+
+    Note: This function is deprecated. Use url_utils.normalize_job_url() instead.
+    Kept for backward compatibility.
     """
     pattern = r'/jobs/view/(\d+)'
     match = re.search(pattern, url)
@@ -48,18 +54,30 @@ def scrape_linkedin_job(url, output_dir="job_descriptions"):
         Dictionary with job information or None if failed
     """
 
-    # Validate URL
-    if not url.startswith('https://www.linkedin.com/jobs/view/'):
-        print(f"Error: Invalid LinkedIn job URL format")
-        print(f"Expected: https://www.linkedin.com/jobs/view/[job-id]")
-        return None
+    # Normalize and validate URL using url_utils
+    try:
+        job_url = normalize_job_url(url)
 
-    job_id = extract_job_id(url)
-    if not job_id:
-        print(f"Error: Could not extract job ID from URL")
-        return None
+        # Ensure it's a LinkedIn URL
+        if job_url.site != JobSite.LINKEDIN:
+            print(f"Error: This scraper only supports LinkedIn URLs")
+            print(f"Detected site: {job_url.site.value}")
+            print(f"For multi-site support, use ai_parser.py")
+            return None
 
-    print(f"Starting to scrape job ID: {job_id}")
+        # Use canonical URL for scraping (removes tracking parameters)
+        canonical_url = job_url.canonical_url
+        job_id = job_url.job_id
+
+        print(f"Starting to scrape job ID: {job_id}")
+        if url != canonical_url:
+            print(f"Using canonical URL (tracking params removed)")
+
+    except ValueError as e:
+        print(f"Error: Invalid LinkedIn job URL")
+        print(f"Details: {e}")
+        print(f"Expected format: https://www.linkedin.com/jobs/view/[job-id]")
+        return None
 
     with sync_playwright() as p:
         # Launch browser in headless mode
@@ -71,9 +89,9 @@ def scrape_linkedin_job(url, output_dir="job_descriptions"):
         page = context.new_page()
 
         try:
-            # Navigate to the job page
-            print(f"Navigating to: {url}")
-            page.goto(url, wait_until='domcontentloaded', timeout=60000)
+            # Navigate to the job page (use canonical URL)
+            print(f"Navigating to: {canonical_url}")
+            page.goto(canonical_url, wait_until='domcontentloaded', timeout=60000)
 
             # Wait for content to load
             try:

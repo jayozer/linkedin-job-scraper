@@ -1,0 +1,25 @@
+# Production Requirements for JayIQ Integration
+# Minimal dependencies for job scraping functionality
+#
+# Installation:
+#   uv pip install -r requirements.production.txt
+#   playwright install chromium
+
+# Browser automation
+playwright==1.48.0
+
+# Data validation
+pydantic>=2.0.0
+
+# ============================================================================
+# NOTES:
+# ============================================================================
+#
+# These are the ONLY packages needed for production scraping.
+#
+# NOT NEEDED for production:
+#   - anthropic (only for ai_parser.py - generating new scrapers)
+#   - mcp (only for ai_parser.py - generating new scrapers)
+#   - python-dotenv (optional - only if you use .env files)
+#
+# To regenerate scrapers later (optional), use requirements.txt instead.
