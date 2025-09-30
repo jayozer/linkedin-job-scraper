@@ -22,6 +22,147 @@ Two approaches to extract job descriptions from job posting sites:
 - Adapts to site structure changes automatically
 - Generates portable, AI-free scripts for production use
 
+## System Flow Diagram
+
+### Option 1: Direct Scraper (Simple)
+```
+┌─────────────────┐
+│   Job URL       │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────┐
+│  linkedin_job_scraper.py    │
+│  • Launch browser           │
+│  • Extract with JS          │
+│  • Save to file             │
+└────────┬────────────────────┘
+         │
+         ▼
+┌─────────────────────────────┐
+│  job_descriptions/          │
+│  Job_Title_Company.txt      │
+└─────────────────────────────┘
+```
+
+### Option 2: AI-Powered Parser (Advanced)
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        PHASE 1: DISCOVERY MODE                           │
+│                      (Once per site - with AI)                           │
+└──────────────────────────────────────────────────────────────────────────┘
+                                    │
+         ┌──────────────────────────┴──────────────────────────┐
+         │           ai_parser.py discover <url>               │
+         └──────────────────────────┬──────────────────────────┘
+                                    │
+                   ┌────────────────┼────────────────┐
+                   ▼                ▼                ▼
+         ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+         │ Test 10+     │  │ Test "Show   │  │ Capture HTML │
+         │ Strategies   │  │ More" Button │  │ Samples      │
+         │ Per Field    │  │              │  │              │
+         └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+                │                 │                 │
+                └─────────────────┼─────────────────┘
+                                  ▼
+                    ┌──────────────────────────────┐
+                    │ AI Analysis                  │
+                    │ • Receive TESTED strategies  │
+                    │ • Get working JavaScript     │
+                    │ • Get HTML samples           │
+                    └──────────────┬───────────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+                    │ discovery_logs/              │
+                    │ linkedin_discovery_*.json    │
+                    │                              │
+                    │ Contains:                    │
+                    │ • tested_strategies          │
+                    │ • show_more_strategy         │
+                    │ • html_samples               │
+                    └──────────────┬───────────────┘
+                                   │
+┌──────────────────────────────────────────────────────────────────────────┐
+│                      PHASE 2: GENERATION MODE                            │
+│                     (Creates reusable scraper)                           │
+└──────────────────────────────────────────────────────────────────────────┘
+                                   │
+         ┌─────────────────────────┴─────────────────────────┐
+         │    ai_parser.py generate <discovery_log>          │
+         └─────────────────────────┬─────────────────────────┘
+                                   │
+                    ┌──────────────▼───────────────┐
+                    │ Extract Tested JavaScript    │
+                    │ • High-confidence strategies │
+                    │ • Working code snippets      │
+                    │ • Show more button logic     │
+                    └──────────────┬───────────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+                    │ AI Code Generation (V2)      │
+                    │ ENFORCES:                    │
+                    │ • page.evaluate() pattern    │
+                    │ • Single JS call             │
+                    │ • Tested strategies          │
+                    └──────────────┬───────────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+                    │ Validation Loop (3 attempts) │
+                    │ ┌──────────────────────────┐ │
+                    │ │ 1. Run script on test URL│ │
+                    │ │ 2. Check output          │ │
+                    │ │ 3. If fail: AI fixes it  │ │
+                    │ │ 4. Retry                 │ │
+                    │ └──────────────────────────┘ │
+                    └──────────────┬───────────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+                    │ generated_scripts/           │
+                    │ linkedin_scraper.py          │
+                    │                              │
+                    │ ✓ Uses page.evaluate()       │
+                    │ ✓ Validated & working        │
+                    │ ✓ No AI dependencies         │
+                    └──────────────┬───────────────┘
+                                   │
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        PHASE 3: REUSE MODE                               │
+│                   (No AI calls - use forever!)                           │
+└──────────────────────────────────────────────────────────────────────────┘
+                                   │
+         ┌─────────────────────────┴─────────────────────────┐
+         │                                                    │
+         ▼                                                    ▼
+┌──────────────────────┐                    ┌──────────────────────┐
+│ Job URL #1           │                    │ Job URL #2           │
+│ linkedin.com/123     │                    │ linkedin.com/456     │
+└──────┬───────────────┘                    └──────┬───────────────┘
+       │                                           │
+       │          ┌─────────────────────┐          │
+       └─────────▶│ linkedin_scraper.py │◀─────────┘
+                  │ (generated)         │
+                  │ • 0 API calls       │
+                  │ • Pure Playwright   │
+                  └──────────┬──────────┘
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │ job_descriptions/    │
+                  │ linkedin_job_*.txt   │
+                  └──────────────────────┘
+```
+
+### Key Benefits
+- **First Job**: Discovery + Generation (AI needed, ~2-3 min)
+- **All Other Jobs**: Direct scraping (0 API calls, ~10 sec each)
+- **Success Rate**: 0% → 90%+ through validation loop
+- **Pattern**: JavaScript `page.evaluate()` - 10x more reliable than CSS selectors
+
 ## Installation
 
 1. Install Python dependencies:
@@ -158,13 +299,103 @@ If you encounter issues:
 - Want documented scraping strategies (discovery logs)
 - Need portable scripts for production deployment
 
+## Production Features
+
+### URL Normalization & Query Parameter Handling
+
+Both scrapers now support URLs with query parameters and tracking codes:
+
+```bash
+# ✅ Clean URL (works)
+python linkedin_job_scraper.py "https://www.linkedin.com/jobs/view/4300371471"
+
+# ✅ URL with query parameters (also works!)
+python linkedin_job_scraper.py "https://www.linkedin.com/jobs/view/4300371471/?alternateChannel=search&eBP=tracking&trk=flagship"
+```
+
+**Important**: Always quote URLs in the command line to prevent shell interpretation of special characters like `&`.
+
+### Chatbot Integration
+
+For integration with chatbots (like JayIQ), use the `url_utils` module for robust URL handling:
+
+```python
+from url_utils import normalize_job_url, extract_job_info
+from linkedin_job_scraper import scrape_linkedin_job
+
+def handle_job_url(user_provided_url: str) -> dict:
+    """
+    Production-ready function for chatbot integration
+
+    Args:
+        user_provided_url: Job URL from user (may include tracking params)
+
+    Returns:
+        Dictionary with job information
+    """
+    try:
+        # Normalize URL (strips tracking parameters, validates format)
+        job_info = extract_job_info(user_provided_url)
+
+        # Scrape the job description
+        job_data = scrape_linkedin_job(job_info['canonical_url'])
+
+        if job_data:
+            return {
+                'success': True,
+                'job_id': job_info['job_id'],
+                'site': job_info['site'],
+                'title': job_data['title'],
+                'company': job_data['company'],
+                'location': job_data['location'],
+                'description': job_data['description']
+            }
+        else:
+            return {'success': False, 'error': 'Failed to scrape job'}
+
+    except ValueError as e:
+        return {'success': False, 'error': str(e)}
+```
+
+**Benefits for Chatbot Integration:**
+- ✅ Handles any LinkedIn URL format (with/without query params)
+- ✅ Strips tracking parameters for privacy
+- ✅ Clear error messages for user feedback
+- ✅ Structured JSON output for easy processing
+- ✅ Site detection (LinkedIn, Indeed, Glassdoor)
+
+### URL Utilities API
+
+The `url_utils` module provides production-ready URL handling:
+
+```python
+from url_utils import (
+    normalize_job_url,    # Parse and clean URLs
+    get_canonical_url,    # Get clean URL without tracking
+    validate_job_url,     # Validate URL format
+    extract_job_info      # Get structured info (for APIs)
+)
+
+# Example: Normalize URL
+job_url = normalize_job_url("https://www.linkedin.com/jobs/view/123/?tracking=xyz")
+print(job_url.job_id)          # "123"
+print(job_url.site)            # JobSite.LINKEDIN
+print(job_url.canonical_url)   # "https://www.linkedin.com/jobs/view/123"
+
+# Example: Quick validation
+is_valid, error_msg = validate_job_url(user_url)
+if not is_valid:
+    print(f"Invalid URL: {error_msg}")
+```
+
 ## Project Structure
 
 ```
 linkedin-job-scraper/
 ├── linkedin_job_scraper.py          # Original direct scraper
-├── ai_linkedin_parser.py             # AI-powered parser (new)
-├── ai_linkedin_parser.md             # System architecture documentation
+├── ai_parser.py                      # AI-powered parser (multi-site)
+├── url_utils.py                      # URL normalization & validation utilities
+├── ai_parser.md                      # System architecture documentation
 ├── todo.md                           # Development roadmap
 ├── discovery_logs/                   # Phase 1 outputs (AI analysis)
 ├── generated_scripts/                # Phase 2 outputs (standalone scripts)

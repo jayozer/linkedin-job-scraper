@@ -28,6 +28,14 @@ from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 from pydantic import BaseModel, Field
 
+# Import URL utilities for robust URL handling
+try:
+    from url_utils import normalize_job_url as normalize_url_external
+    URL_UTILS_AVAILABLE = True
+except ImportError:
+    URL_UTILS_AVAILABLE = False
+    logging.warning("url_utils module not found - URL normalization disabled")
+
 # Load environment variables
 load_dotenv()
 
@@ -1698,6 +1706,21 @@ Supported sites: LinkedIn, Indeed, Glassdoor
     # Run selected mode
     try:
         if args.mode == 'discover':
+            # Normalize URL if url_utils is available (handles query parameters)
+            original_url = args.url
+            if URL_UTILS_AVAILABLE:
+                try:
+                    normalized = normalize_url_external(args.url)
+                    args.url = normalized.canonical_url
+                    if original_url != args.url:
+                        print(f"✓ URL normalized (tracking params removed)")
+                        logging.info(f"Original: {original_url}")
+                        logging.info(f"Canonical: {args.url}")
+                except Exception as e:
+                    # Fall back to original URL if normalization fails
+                    logging.warning(f"URL normalization failed: {e}")
+                    print(f"⚠️  URL normalization failed, using original URL")
+
             # Get site (manual or auto-detect)
             site = None
             if hasattr(args, 'site') and args.site:
